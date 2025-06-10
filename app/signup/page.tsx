@@ -6,12 +6,21 @@ import { useRouter } from 'next/navigation'
 export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
+    setLoading(true)
     const { error } = await supabase.auth.signUp({ email, password })
-    if (!error) router.push('/dashboard')
+    setLoading(false)
+    if (error) {
+      setError(error.message)
+    } else {
+      router.push('/dashboard')
+    }
   }
 
   return (
@@ -32,8 +41,9 @@ export default function SignupPage() {
         onChange={(e) => setPassword(e.target.value)}
       />
       <button className="w-full bg-black text-white p-2" type="submit">
-        Sign Up
+        {loading ? 'Loading...' : 'Sign Up'}
       </button>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
     </form>
   )
 }
