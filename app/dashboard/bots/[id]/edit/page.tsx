@@ -3,7 +3,11 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import BotFlowEditor from '@/components/BotFlowEditor'
 
-export default async function EditBotPage({ params }: { params: { id: string } }) {
+export default async function EditBotPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
   const supabase = createServerComponentClient({ cookies })
   const {
     data: { session },
@@ -12,17 +16,19 @@ export default async function EditBotPage({ params }: { params: { id: string } }
     redirect('/login')
   }
 
+  const { id } = await params
+
   const { data: bot } = await supabase
     .from('bots')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single()
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">{bot?.name}</h1>
       <BotFlowEditor
-        botId={params.id}
+        botId={id}
         initialNodes={bot?.flow_json?.nodes || []}
         initialEdges={bot?.flow_json?.edges || []}
       />
