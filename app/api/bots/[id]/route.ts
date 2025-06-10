@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createRouteHandlerClient({ cookies })
   const {
@@ -13,10 +13,11 @@ export async function GET(
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  const { id } = await params
   const { data, error } = await supabase
     .from('bots')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single()
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -26,7 +27,7 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createRouteHandlerClient({ cookies })
   const updates = await request.json()
@@ -36,10 +37,11 @@ export async function PUT(
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  const { id } = await params
   const { data, error } = await supabase
     .from('bots')
     .update({ ...updates })
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('owner_id', session.user.id)
     .select()
     .single()
