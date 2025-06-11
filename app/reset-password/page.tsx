@@ -2,52 +2,44 @@
 import { supabase } from '@/lib/supabaseClient'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('')
+export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setMessage('')
     setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.updateUser({ password })
     setLoading(false)
     if (error) {
       setError(error.message)
     } else {
-      router.push('/dashboard')
+      setMessage('Password updated. You can now log in.')
+      router.push('/login')
     }
   }
 
   return (
-    <form onSubmit={handleLogin} className="max-w-sm mx-auto p-8 space-y-4">
-      <h1 className="text-2xl font-bold">Login</h1>
-      <input
-        className="w-full border p-2"
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
+    <form onSubmit={handleUpdate} className="max-w-sm mx-auto p-8 space-y-4">
+      <h1 className="text-2xl font-bold">Reset Password</h1>
       <input
         className="w-full border p-2"
         type="password"
-        placeholder="Password"
+        placeholder="New password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
       <button className="w-full bg-black text-white p-2" type="submit">
-        {loading ? 'Loading...' : 'Login'}
+        {loading ? 'Loading...' : 'Update Password'}
       </button>
+      {message && <p className="text-green-600 text-sm">{message}</p>}
       {error && <p className="text-red-500 text-sm">{error}</p>}
-      <Link href="/forgot-password" className="text-sm text-blue-600 underline">
-        Forgot your password?
-      </Link>
     </form>
   )
 }

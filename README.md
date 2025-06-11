@@ -22,6 +22,14 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-key
 
 - Supabase-backed API routes for creating and updating bots.
 - Dashboard pages to list bots, create a new one and edit their flow using a simple React Flow editor.
+- Forgot password and password reset pages powered by Supabase.
+
+## Password Reset Flow
+
+1. From the login page, click **Forgot your password?**.
+2. Enter your email on `/forgot-password` to receive a magic link.
+3. Follow the link in your email, which opens `/reset-password`.
+4. Choose a new password and submit the form to update your account.
 
 
 ## License
