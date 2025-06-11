@@ -6,7 +6,15 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createRouteHandlerClient({ cookies })
+  const supabase = createRouteHandlerClient(
+    { cookies },
+    {
+      supabaseUrl:
+        process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL!,
+      supabaseKey:
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLIC!,
+    }
+  )
   const {
     data: { session },
   } = await supabase.auth.getSession()
@@ -29,7 +37,15 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createRouteHandlerClient({ cookies })
+  const supabase = createRouteHandlerClient(
+    { cookies },
+    {
+      supabaseUrl:
+        process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL!,
+      supabaseKey:
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLIC!,
+    }
+  )
   const updates = await request.json()
   const {
     data: { session },
