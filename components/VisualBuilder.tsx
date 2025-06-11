@@ -1,5 +1,6 @@
 'use client'
 import React, { useCallback, useEffect } from 'react'
+import { nanoid } from 'nanoid'
 import ReactFlow, {
   addEdge,
   Background,
@@ -28,8 +29,8 @@ export default function VisualBuilder({ flowName }: { flowName: string }) {
   const { nodes: initialNodes, edges: initialEdges, setNodes, setEdges, save } =
     useFlowData(flowName)
 
-  const [nodes, _setNodes, onNodesChange] = useNodesState<Node<NodeData>[]>([])
-  const [edges, _setEdges, onEdgesChange] = useEdgesState<Edge[]>([])
+  const [nodes, _setNodes, onNodesChange] = useNodesState<NodeData>([])
+  const [edges, _setEdges, onEdgesChange] = useEdgesState([])
   const reactFlowInstance = useReactFlow()
 
   useEffect(() => {
@@ -72,12 +73,12 @@ export default function VisualBuilder({ flowName }: { flowName: string }) {
         y: event.clientY,
       })
       const newNode: Node<NodeData> = {
-        id: `${+new Date()}`,
+        id: nanoid(),
         type,
         position,
         data: {},
       }
-      _setNodes((nds) => nds.concat(newNode))
+      _setNodes((nds) => [...nds, newNode])
     },
     [reactFlowInstance, _setNodes]
   )

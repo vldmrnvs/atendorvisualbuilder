@@ -1,7 +1,6 @@
 import type { Edge, Node } from 'react-flow-renderer'
 
 export type NodeData = {
-  label?: string
   prompt?: string
   tool?: string
   output?: string
