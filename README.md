@@ -23,3 +23,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-key
 - Supabase-backed API routes for creating and updating bots.
 - Dashboard pages to list bots, create a new one and edit their flow using a simple React Flow editor.
 
+
+## License
+
+This project is released under the [MIT License](LICENSE).
