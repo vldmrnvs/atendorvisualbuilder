@@ -4,7 +4,15 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 export default async function BotsPage() {
-  const supabase = createServerComponentClient({ cookies })
+  const supabase = createServerComponentClient(
+    { cookies },
+    {
+      supabaseUrl:
+        process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL!,
+      supabaseKey:
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLIC!,
+    }
+  )
   const {
     data: { session },
   } = await supabase.auth.getSession()

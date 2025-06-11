@@ -18,6 +18,11 @@ NEXT_PUBLIC_SUPABASE_URL=your-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-key
 ```
 
+Alternatively you can use environment variables named `SUPABASE_URL` and
+`SUPABASE_PUBLIC`. When using these names, be sure they are exposed to the client
+(for example by prefixing them with `NEXT_PUBLIC_` in `next.config.ts` or your
+deployment settings).
+
 ## Features
 
 - Supabase-backed API routes for creating and updating bots.
