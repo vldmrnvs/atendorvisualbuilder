@@ -24,8 +24,8 @@ export default async function BotsPage() {
 
   const { data: bots } = await supabase
     .from('bots')
-    .select('id, name')
-    .eq('owner_id', session.user.id)
+    .select('id, name, description')
+    .eq('user_id', session.user.id)
     .order('created_at', { ascending: false })
 
   return (
@@ -40,9 +40,10 @@ export default async function BotsPage() {
       <ul className="mt-4 space-y-2">
         {bots?.map((bot) => (
           <li key={bot.id}>
-            <Link href={`/dashboard/bots/${bot.id}/edit`} className="underline">
+            <Link href={`/dashboard/bots/${bot.id}`} className="underline">
               {bot.name}
             </Link>
+            <p className="text-sm text-gray-600">{bot.description}</p>
           </li>
         ))}
       </ul>

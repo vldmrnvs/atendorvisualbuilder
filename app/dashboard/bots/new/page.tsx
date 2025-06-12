@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 
 export default function NewBotPage() {
   const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -13,12 +14,12 @@ export default function NewBotPage() {
     const res = await fetch('/api/bots', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, flow_json: { nodes: [], edges: [] } }),
+      body: JSON.stringify({ name, description }),
     })
     setLoading(false)
     if (res.ok) {
       const bot = await res.json()
-      router.push(`/dashboard/bots/${bot.id}/edit`)
+      router.push(`/dashboard/bots/${bot.id}`)
     }
   }
 
@@ -31,6 +32,12 @@ export default function NewBotPage() {
         placeholder="Bot Name"
         value={name}
         onChange={(e) => setName(e.target.value)}
+      />
+      <textarea
+        className="w-full border p-2"
+        placeholder="Description"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
       />
       <button className="w-full bg-black text-white p-2" type="submit">
         {loading ? 'Creating...' : 'Create'}
