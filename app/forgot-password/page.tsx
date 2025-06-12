@@ -3,21 +3,6 @@ import { useState } from 'react'
 import { getSupabaseClient } from '@/lib/supabaseClient'
 import Link from 'next/link'
 
-export const metadata = {
-  title: 'Recover Password – Atendor',
-  description: 'Reset your Atendor password.',
-  openGraph: {
-    title: 'Recover Password – Atendor',
-    description: 'Reset your Atendor password.',
-    images: ['/og.png'],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Recover Password – Atendor',
-    description: 'Reset your Atendor password.',
-    images: ['/og.png'],
-  },
-}
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
