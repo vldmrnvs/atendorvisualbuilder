@@ -14,6 +14,11 @@ interface FlowState {
   setSelected: (n: Node<NodeData> | null) => void
   load: (botId: string) => Promise<void>
   save: (botId: string) => Promise<void>
+  saveData: (
+    botId: string,
+    nodes: Node<NodeData>[],
+    edges: Edge[]
+  ) => Promise<void>
 }
 
 export const useFlowStore = create<FlowState>((set, get) => ({
@@ -43,6 +48,24 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       flowName: `bot-${botId}`,
       nodes: get().nodes,
       edges: get().edges,
+    }
+    if (get().flowId) {
+      await supabase.from('flows').update(payload).eq('id', get().flowId!)
+    } else {
+      const { data } = await supabase
+        .from('flows')
+        .insert(payload)
+        .select()
+        .single()
+      if (data) set({ flowId: data.id })
+    }
+  },
+  async saveData(botId, nodes, edges) {
+    const supabase = getSupabaseClient()
+    const payload = {
+      flowName: `bot-${botId}`,
+      nodes,
+      edges,
     }
     if (get().flowId) {
       await supabase.from('flows').update(payload).eq('id', get().flowId!)

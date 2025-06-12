@@ -9,7 +9,10 @@ export default function ToolNode({ data }: NodeProps<NodeData>) {
     if (data) data.tool = e.target.value
   }
   return (
-    <div className="p-2 bg-white rounded shadow w-40">
+    <div
+      className="p-2 rounded shadow w-40"
+      style={{ backgroundColor: data.color || 'white' }}
+    >
       <select
         className="w-full border rounded p-1"
         value={data.tool}

@@ -15,7 +15,9 @@ import ReactFlow, {
 } from 'react-flow-renderer'
 import { nanoid } from 'nanoid'
 import { useFlowStore } from '@/store/flowStore'
+import { useBotBuilderStore } from '@/store/botBuilderStore'
 import type { NodeData } from '@/types'
+import { toast } from 'sonner'
 import StartNode from './nodes/StartNode'
 import SendMessageNode from './nodes/SendMessageNode'
 import WaitNode from './nodes/WaitNode'
@@ -24,6 +26,8 @@ import FileLookupNode from './nodes/FileLookupNode'
 import HttpRequestNode from './nodes/HttpRequestNode'
 import DecisionNode from './nodes/DecisionNode'
 import EndNode from './nodes/EndNode'
+import WebhookNode from './nodes/WebhookNode'
+import FileSearchNode from './nodes/FileSearchNode'
 
 const nodeTypes = {
   start: StartNode,
@@ -31,25 +35,38 @@ const nodeTypes = {
   wait: WaitNode,
   input: ReceiveInputNode,
   file: FileLookupNode,
+  'file-search': FileSearchNode,
+  webhook: WebhookNode,
   http: HttpRequestNode,
   decision: DecisionNode,
   end: EndNode,
 }
 
-type Props = { botId: string }
+type Props = { botId: string; planLimit: number }
 
-export default function BotFlowBuilder({ botId }: Props) {
+export default function BotFlowBuilder({ botId, planLimit }: Props) {
   const [rfNodes, setRfNodes] = useState<Node<NodeData>[]>([])
   const [rfEdges, setRfEdges] = useState<Edge[]>([])
   const store = useFlowStore()
+  const files = useBotBuilderStore((s) => s.files)
 
   useEffect(() => {
     store.load(botId)
   }, [botId, store])
 
+  const markLimit = useCallback(
+    (nodes: Node<NodeData>[]) =>
+      nodes.map((n, i) =>
+        i >= planLimit
+          ? { ...n, style: { ...n.style, border: '2px solid red' } }
+          : { ...n, style: { ...n.style, border: undefined } }
+      ),
+    [planLimit]
+  )
+
   useEffect(() => {
-    setRfNodes(store.nodes)
-  }, [store.nodes, store])
+    setRfNodes(markLimit(store.nodes))
+  }, [store.nodes, store, markLimit])
 
   useEffect(() => {
     setRfEdges(store.edges)
@@ -58,6 +75,10 @@ export default function BotFlowBuilder({ botId }: Props) {
   useEffect(() => {
     store.setNodes(rfNodes)
   }, [rfNodes, store])
+
+  useEffect(() => {
+    setRfNodes((nodes) => markLimit(nodes))
+  }, [markLimit])
 
   useEffect(() => {
     store.setEdges(rfEdges)
@@ -90,7 +111,7 @@ export default function BotFlowBuilder({ botId }: Props) {
       const type = event.dataTransfer.getData('application/reactflow')
       if (!type) return
       if (type === 'start' && rfNodes.some((n) => n.type === 'start')) {
-        alert('Only one start node allowed')
+        toast.error('Only one start node allowed')
         return
       }
       const position = (event.target as HTMLElement).getBoundingClientRect()
@@ -100,9 +121,13 @@ export default function BotFlowBuilder({ botId }: Props) {
         position: { x: event.clientX - position.left, y: event.clientY - position.top },
         data: {},
       }
+      if (rfNodes.length >= planLimit) {
+        toast.warning('Plan limit reached. Extra nodes will not be saved')
+        newNode.style = { border: '2px solid red' }
+      }
       setRfNodes((nds) => [...nds, newNode])
     },
-    [rfNodes]
+    [rfNodes, planLimit]
   )
 
   const onDragOver = (event: React.DragEvent) => {
@@ -111,8 +136,18 @@ export default function BotFlowBuilder({ botId }: Props) {
   }
 
   const save = async () => {
-    await store.save(botId)
-    alert('Flow saved')
+    const nodesToSave = rfNodes.slice(0, planLimit)
+    const allowedIds = new Set(nodesToSave.map((n) => n.id))
+    const edgesToSave = rfEdges.filter(
+      (e) => allowedIds.has(e.source) && allowedIds.has(e.target)
+    )
+    try {
+      await store.saveData(botId, nodesToSave, edgesToSave)
+      toast.success('Flow saved')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Save failed'
+      toast.error(msg)
+    }
   }
 
   const selectNode = (_: React.MouseEvent, node: Node<NodeData>) => {
@@ -161,6 +196,22 @@ export default function BotFlowBuilder({ botId }: Props) {
         { id: nanoid(), type: 'send', position: { x: 450, y: 0 }, data: { message: 'How can I help you today?' } },
         base[1],
       ]
+    } else if (name === 'booking') {
+      nodes = [
+        base[0],
+        { id: nanoid(), type: 'send', position: { x: 150, y: 0 }, data: { message: 'What day would you like to book?' } },
+        { id: nanoid(), type: 'input', position: { x: 350, y: 0 }, data: {} },
+        { id: nanoid(), type: 'send', position: { x: 550, y: 0 }, data: { message: 'Booking confirmed!' } },
+        base[1],
+      ]
+    } else if (name === 'survey') {
+      nodes = [
+        base[0],
+        { id: nanoid(), type: 'send', position: { x: 150, y: 0 }, data: { message: 'Rate us 1-5' } },
+        { id: nanoid(), type: 'input', position: { x: 300, y: 0 }, data: {} },
+        { id: nanoid(), type: 'send', position: { x: 450, y: 0 }, data: { message: 'Thanks!' } },
+        base[1],
+      ]
     }
     // edges sequential
     edges = nodes.slice(0, -1).map((n, i) => ({
@@ -169,7 +220,10 @@ export default function BotFlowBuilder({ botId }: Props) {
       target: nodes[i + 1].id,
       type: 'smoothstep',
     }))
-    setRfNodes(nodes)
+    if (nodes.length > planLimit) {
+      toast.warning('Template exceeds plan limit. Extra nodes marked in red')
+    }
+    setRfNodes(markLimit(nodes))
     setRfEdges(edges)
     setShowTemplates(false)
   }
@@ -193,6 +247,8 @@ export default function BotFlowBuilder({ botId }: Props) {
           ['wait', 'Wait'],
           ['input', 'Receive Input'],
           ['file', 'File Lookup'],
+          ['file-search', 'File Search'],
+          ['webhook', 'Webhook'],
           ['http', 'HTTP Request'],
           ['decision', 'Decision'],
           ['end', 'End'],
@@ -230,12 +286,13 @@ export default function BotFlowBuilder({ botId }: Props) {
         >
           + Templates
         </button>
-        <div className="absolute bottom-2 right-2 space-x-2">
+        <div className="absolute top-2 right-2 space-x-2">
           <button
             onClick={save}
             className="bg-black text-white px-3 py-1 rounded text-sm"
+            aria-label="Save Flow"
           >
-            Save
+            Save Flow
           </button>
         </div>
       </div>
@@ -246,7 +303,9 @@ export default function BotFlowBuilder({ botId }: Props) {
         {store.selected && (
           <div>
             <h2 className="font-semibold mb-2">Node Settings</h2>
-            {['send', 'start', 'end'].includes(store.selected.type ?? '') && (
+            {['send', 'start', 'end', 'webhook', 'file-search', 'http'].includes(
+              store.selected.type ?? ''
+            ) && (
               <div className="mb-2">
                 <label className="block mb-1" htmlFor="label">Label</label>
                 <input
@@ -254,6 +313,29 @@ export default function BotFlowBuilder({ botId }: Props) {
                   className="w-full border p-1"
                   value={store.selected.data.label || ''}
                   onChange={(e) => updateNodeData('label', e.target.value)}
+                />
+              </div>
+            )}
+            {store.selected && (
+              <div className="mb-2">
+                <label className="block mb-1" htmlFor="description">Description</label>
+                <input
+                  id="description"
+                  className="w-full border p-1"
+                  value={store.selected.data.description || ''}
+                  onChange={(e) => updateNodeData('description', e.target.value)}
+                />
+              </div>
+            )}
+            {store.selected && (
+              <div className="mb-2">
+                <label className="block mb-1" htmlFor="color">Color</label>
+                <input
+                  id="color"
+                  type="color"
+                  className="w-full border p-1 h-8"
+                  value={store.selected.data.color || '#ffffff'}
+                  onChange={(e) => updateNodeData('color', e.target.value)}
                 />
               </div>
             )}
@@ -291,6 +373,91 @@ export default function BotFlowBuilder({ botId }: Props) {
                 />
               </div>
             )}
+            {store.selected.type === 'webhook' && (
+              <div className="space-y-2">
+                <div className="mb-2">
+                  <label className="block mb-1" htmlFor="wh-url">Webhook URL</label>
+                  <input
+                    id="wh-url"
+                    className="w-full border p-1"
+                    value={store.selected.data.url || ''}
+                    onChange={(e) => updateNodeData('url', e.target.value)}
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="block mb-1" htmlFor="wh-method">Method</label>
+                  <select
+                    id="wh-method"
+                    className="w-full border p-1"
+                    value={store.selected.data.method || 'POST'}
+                    onChange={(e) => updateNodeData('method', e.target.value)}
+                  >
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                  </select>
+                </div>
+                <div className="mb-2">
+                  <label className="block mb-1" htmlFor="wh-headers">Headers</label>
+                  <textarea
+                    id="wh-headers"
+                    className="w-full border p-1"
+                    value={(store.selected.data.headers || [])
+                      .map((h) => `${h.key}:${h.value}`)
+                      .join('\n')}
+                    onChange={(e) =>
+                      updateNodeData(
+                        'headers',
+                        e.target.value
+                          .split('\n')
+                          .map((l) => {
+                            const [key, ...rest] = l.split(':')
+                            return { key: key.trim(), value: rest.join(':').trim() }
+                          })
+                          .filter((h) => h.key)
+                      )
+                    }
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="block mb-1" htmlFor="wh-payload">Payload</label>
+                  <textarea
+                    id="wh-payload"
+                    className="w-full border p-1"
+                    value={store.selected.data.payload || ''}
+                    onChange={(e) => updateNodeData('payload', e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+            {store.selected.type === 'file-search' && (
+              <div className="space-y-2">
+                <div className="mb-2">
+                  <label className="block mb-1" htmlFor="fs-file">File</label>
+                  <select
+                    id="fs-file"
+                    className="w-full border p-1"
+                    value={store.selected.data.fileId || ''}
+                    onChange={(e) => updateNodeData('fileId', e.target.value)}
+                  >
+                    <option value="">Select file</option>
+                    {files.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mb-2">
+                  <label className="block mb-1" htmlFor="fs-prompt">User prompt</label>
+                  <textarea
+                    id="fs-prompt"
+                    className="w-full border p-1"
+                    value={store.selected.data.prompt || ''}
+                    onChange={(e) => updateNodeData('prompt', e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
             {store.selected.type === 'decision' && (
               <div className="mb-2">
                 <label className="block mb-1" htmlFor="condition">Condition</label>
@@ -312,17 +479,28 @@ export default function BotFlowBuilder({ botId }: Props) {
         )}
       </aside>
       {showTemplates && (
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center" role="dialog" aria-modal="true">
+        <div
+          className="absolute inset-0 bg-black/50 flex items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Template picker"
+        >
           <div className="bg-white p-4 rounded space-y-4 w-72">
             <h2 className="font-semibold text-center">Select Template</h2>
-            <button className="w-full border p-2" onClick={() => applyTemplate('faq')}>
+            <button aria-label="Apply FAQ template" className="w-full border p-2" onClick={() => applyTemplate('faq')}>
               FAQ Bot
             </button>
-            <button className="w-full border p-2" onClick={() => applyTemplate('lead')}>
+            <button aria-label="Apply Lead Collector template" className="w-full border p-2" onClick={() => applyTemplate('lead')}>
               Lead Collector Bot
             </button>
-            <button className="w-full border p-2" onClick={() => applyTemplate('wa')}>
+            <button aria-label="Apply WhatsApp template" className="w-full border p-2" onClick={() => applyTemplate('wa')}>
               WhatsApp Greeter Bot
+            </button>
+            <button aria-label="Apply Booking template" className="w-full border p-2" onClick={() => applyTemplate('booking')}>
+              Booking Bot
+            </button>
+            <button aria-label="Apply Survey template" className="w-full border p-2" onClick={() => applyTemplate('survey')}>
+              Survey Bot
             </button>
             <button className="w-full border p-2" onClick={() => setShowTemplates(false)}>
               Close

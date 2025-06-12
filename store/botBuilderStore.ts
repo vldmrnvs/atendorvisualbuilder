@@ -16,6 +16,7 @@ export interface BotBuilderState {
   addFile: (file: UploadedFile) => void
   removeFile: (fileId: string) => void
   updateFileStatus: (fileId: string, status: 'pending' | 'embedded') => void
+  loadFiles: (botId: string) => Promise<void>
 }
 
 export const useBotBuilderStore = create<BotBuilderState>((set) => ({
@@ -29,4 +30,22 @@ export const useBotBuilderStore = create<BotBuilderState>((set) => ({
         f.id === fileId ? { ...f, embedded: status === 'embedded' } : f
       ),
     })),
+  async loadFiles(botId) {
+    const supabase = (await import('@/lib/supabaseClient')).getSupabaseClient()
+    const { data } = await supabase
+      .from('files')
+      .select('id, file_name, file_type, url, size_mb, embedded')
+      .eq('bot_id', botId)
+    if (data)
+      set({
+        files: data.map((d) => ({
+          id: d.id,
+          name: d.file_name,
+          type: d.file_type,
+          size: d.size_mb * 1024 * 1024,
+          url: d.url,
+          embedded: d.embedded,
+        })),
+      })
+  },
 }))
