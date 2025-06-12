@@ -18,6 +18,7 @@ export default function PublicHeader() {
         <nav className="hidden md:flex space-x-6" aria-label="Main">
           <Link href="#" className="hover:underline">Home</Link>
           <Link href="#features" className="hover:underline">Features</Link>
+          <Link href="/pricing" className="text-sm font-medium hover:underline">Pricing</Link>
           <Link href="#contact" className="hover:underline">Contact</Link>
           <Link href="/login" className="font-medium hover:underline">Login</Link>
         </nav>
@@ -32,6 +33,7 @@ export default function PublicHeader() {
         <nav className="md:hidden px-4 pb-4 space-y-2" aria-label="Mobile">
           <Link href="/" className="block" onClick={() => setOpen(false)}>Home</Link>
           <Link href="#features" className="block" onClick={() => setOpen(false)}>Features</Link>
+          <Link href="/pricing" className="block" onClick={() => setOpen(false)}>Pricing</Link>
           <Link href="#contact" className="block" onClick={() => setOpen(false)}>Contact</Link>
           <Link href="/login" className="block" onClick={() => setOpen(false)}>Login</Link>
         </nav>

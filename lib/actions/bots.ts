@@ -12,7 +12,9 @@ export async function getBotById(id: string, userId: string) {
   const supabase = createServerComponentClient({ cookies }, options)
   const { data, error } = await supabase
     .from('bots')
-    .select('id, name, description, user_id, created_at')
+    .select(
+      'id, name, description, plan_level, llm_profile, user_id, created_at'
+    )
     .eq('id', id)
     .eq('user_id', userId)
     .single()

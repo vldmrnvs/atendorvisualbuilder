@@ -50,6 +50,8 @@ export async function POST(request: Request) {
     .insert({
       name,
       description,
+      plan_level: 'starter',
+      llm_profile: 'standard',
       user_id: session.user.id,
       flow_json: { nodes: [], edges: [] },
     })

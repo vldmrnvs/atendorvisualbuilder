@@ -19,6 +19,8 @@ export type Bot = {
   id?: string
   name: string
   description: string
+  plan_level?: 'starter' | 'pro' | 'enterprise'
+  llm_profile?: 'standard' | 'advanced' | 'premium'
   user_id?: string
   created_at?: string
 }
