@@ -2,13 +2,19 @@ import type { Edge, Node } from 'react-flow-renderer'
 
 export type NodeData = {
   label?: string
+  description?: string
   message?: string
   delay?: number
   url?: string
+  method?: string
+  headers?: { key: string; value: string }[]
+  payload?: string
+  fileId?: string
   condition?: string
   prompt?: string
   tool?: string
   output?: string
+  color?: string
 }
 
 export type FlowType = {

@@ -7,7 +7,10 @@ export default function PromptNode({ data }: NodeProps<NodeData>) {
     if (data) data.prompt = e.target.value
   }
   return (
-    <div className="p-2 bg-white rounded shadow w-48">
+    <div
+      className="p-2 rounded shadow w-48"
+      style={{ backgroundColor: data.color || 'white' }}
+    >
       <textarea
         className="w-full border rounded p-1"
         placeholder="Prompt..."
