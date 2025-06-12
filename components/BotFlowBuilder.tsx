@@ -534,8 +534,8 @@ function BuilderContent({ botId, planLimit, botName }: Props) {
               Delete
             </button>
           </div>
-        )}
-      </aside>
+        </aside>
+      )}
       {showTemplates && (
         <div
           className="absolute inset-0 bg-black/50 flex items-center justify-center"
