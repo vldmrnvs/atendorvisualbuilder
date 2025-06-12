@@ -4,11 +4,11 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import type { User } from '@supabase/supabase-js'
 
 export function useUser() {
-  const supabase = createClientComponentClient()
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    const supabase = createClientComponentClient()
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user ?? null)
       setIsLoading(false)
@@ -21,7 +21,7 @@ export function useUser() {
     return () => {
       subscription.unsubscribe()
     }
-  }, [supabase])
+  }, [])
 
   return { user, isLoading, isLoggedIn: !!user }
 }

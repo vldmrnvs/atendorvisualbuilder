@@ -6,7 +6,6 @@ import { toast } from 'sonner'
 import { useUser } from '@/hooks/useUser'
 
 export default function SignupPage() {
-  const supabase = createClientComponentClient()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -20,6 +19,7 @@ export default function SignupPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    const supabase = createClientComponentClient()
     const { error } = await supabase.auth.signUp({ email, password })
     setLoading(false)
     if (error) {

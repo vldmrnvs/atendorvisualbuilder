@@ -1,10 +1,11 @@
 'use client'
-import { supabase } from '@/lib/supabaseClient'
 import { useEffect, useState } from 'react'
+import { getSupabaseClient } from '@/lib/supabaseClient'
 
 export default function HeaderDashboard() {
   const [email, setEmail] = useState<string>('')
   useEffect(() => {
+    const supabase = getSupabaseClient()
     const getUser = async () => {
       const { data } = await supabase.auth.getUser()
       setEmail(data.user?.email ?? '')
