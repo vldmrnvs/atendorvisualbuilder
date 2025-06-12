@@ -15,6 +15,9 @@ export type NodeData = {
   tool?: string
   output?: string
   color?: string
+  text?: string
+  fontFamily?: 'sans' | 'serif' | 'monospace'
+  size?: 'sm' | 'md' | 'lg'
 }
 
 export type FlowType = {
