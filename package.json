@@ -21,7 +21,8 @@
     "react-dom": "^19.0.0",
     "react-flow-renderer": "^10.3.17",
     "sonner": "^2.0.5",
-    "ui": "git+https://github.com/shadcn/ui.git"
+    "ui": "git+https://github.com/shadcn/ui.git",
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
