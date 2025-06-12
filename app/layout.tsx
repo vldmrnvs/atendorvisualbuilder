@@ -5,6 +5,17 @@ import { Toaster } from "sonner";
 export const metadata: Metadata = {
   title: "Atendor",
   description: "Atendor AI chatbot builder",
+  openGraph: {
+    title: "Atendor",
+    description: "Atendor AI chatbot builder",
+    images: ["/og.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Atendor",
+    description: "Atendor AI chatbot builder",
+    images: ["/og.png"],
+  },
 };
 
 export default function RootLayout({
