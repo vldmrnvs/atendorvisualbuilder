@@ -3,10 +3,11 @@ import { UploadArea } from '@/components/builder/UploadArea'
 import { FileList } from '@/components/builder/FileList'
 import { useUser } from '@/hooks/useUser'
 
-export default function BotBuilderPage({ params }: { params: { id: string } }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default function BotBuilderPage({ params }: { params: any }) {
+  const { id } = params as { id: string }
   const { isLoading } = useUser()
   if (isLoading) return <p className="p-4">Loading...</p>
-  const { id } = params
   return (
     <div className="p-4 space-y-6">
       <h1 className="text-2xl font-bold">Bot Builder</h1>

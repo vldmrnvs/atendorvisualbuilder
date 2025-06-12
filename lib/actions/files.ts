@@ -1,5 +1,4 @@
-import { cookies } from 'next/headers'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { getSupabaseClient } from '@/lib/supabaseClient'
 import type { BotFile, FileType } from '@/types'
 
 export const FILE_TYPE_EXTENSIONS: Record<FileType, string[]> = {
@@ -8,11 +7,6 @@ export const FILE_TYPE_EXTENSIONS: Record<FileType, string[]> = {
   image: ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
 }
 
-const options = {
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL!,
-  supabaseKey:
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLIC!,
-}
 
 export function getFileTypeFromExtension(ext: string): FileType | null {
   const lower = ext.toLowerCase()
@@ -35,7 +29,7 @@ export class FilesCrud {
     if (!file_type) {
       throw new Error(`Unsupported extension ${extension}`)
     }
-    const supabase = createServerComponentClient({ cookies }, options)
+    const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('files')
       .insert({
@@ -67,7 +61,7 @@ export class FilesCrud {
     ) {
       throw new Error(`Unsupported extension ${extension}`)
     }
-    const supabase = createServerComponentClient({ cookies }, options)
+    const supabase = getSupabaseClient()
     const { data, error } = await supabase.storage
       .from('bot-files')
       .upload(`${botId}/${file.name}`, file, { upsert: true })
