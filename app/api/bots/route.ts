@@ -21,7 +21,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('bots')
     .select('*')
-    .eq('owner_id', session.user.id)
+    .eq('user_id', session.user.id)
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLIC!,
     }
   )
-  const { name, flow_json } = await request.json()
+  const { name, description } = await request.json()
   const {
     data: { session },
   } = await supabase.auth.getSession()
@@ -47,7 +47,12 @@ export async function POST(request: Request) {
   }
   const { data, error } = await supabase
     .from('bots')
-    .insert({ name, flow_json, owner_id: session.user.id })
+    .insert({
+      name,
+      description,
+      user_id: session.user.id,
+      flow_json: { nodes: [], edges: [] },
+    })
     .select()
     .single()
   if (error) {

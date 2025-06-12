@@ -14,3 +14,11 @@ export type FlowType = {
   nodes: Node<NodeData>[]
   edges: Edge[]
 }
+
+export type Bot = {
+  id?: string
+  name: string
+  description: string
+  user_id?: string
+  created_at?: string
+}

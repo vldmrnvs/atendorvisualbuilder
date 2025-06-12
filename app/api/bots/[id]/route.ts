@@ -28,6 +28,7 @@ export async function GET(
     .from('bots')
     .select('*')
     .eq('id', id)
+    .eq('user_id', session.user.id)
     .single()
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -60,7 +61,7 @@ export async function PUT(
     .from('bots')
     .update({ ...updates })
     .eq('id', id)
-    .eq('owner_id', session.user.id)
+    .eq('user_id', session.user.id)
     .select()
     .single()
   if (error) {
