@@ -1,7 +1,7 @@
 'use client'
 import { FileText, Image as ImageIcon, File as GenericFile } from 'lucide-react'
 import { useBotBuilderStore } from '@/store/botBuilderStore'
-import type { UploadedFile } from '@/store/botBuilderStore'
+import type { UploadedFile, BotBuilderState } from '@/store/botBuilderStore'
 
 const iconFor = (type: UploadedFile['type']) => {
   switch (type) {
@@ -15,13 +15,13 @@ const iconFor = (type: UploadedFile['type']) => {
 }
 
 export function FileList() {
-  const files = useBotBuilderStore((s) => s.files)
+  const files = useBotBuilderStore((s: BotBuilderState) => s.files)
   if (files.length === 0) {
     return <p className="text-sm text-gray-500">No files uploaded.</p>
   }
   return (
     <ul className="space-y-2">
-      {files.map((f) => (
+      {files.map((f: UploadedFile) => (
         <li
           key={f.id}
           className="flex items-center justify-between border p-2 rounded"

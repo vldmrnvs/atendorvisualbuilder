@@ -3,10 +3,11 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { FilesCrud, FILE_TYPE_EXTENSIONS } from '@/lib/actions/files'
 import { useBotBuilderStore } from '@/store/botBuilderStore'
+import type { BotBuilderState } from '@/store/botBuilderStore'
 
 export function UploadArea({ botId }: { botId: string }) {
   const [loading, setLoading] = useState(false)
-  const addFile = useBotBuilderStore((s) => s.addFile)
+  const addFile = useBotBuilderStore((s: BotBuilderState) => s.addFile)
   const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files) return

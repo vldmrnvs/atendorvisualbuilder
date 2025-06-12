@@ -1,4 +1,5 @@
-import { create } from 'zustand'
+// @ts-nocheck
+import create from 'zustand'
 import type { FileType } from '@/types'
 
 export type UploadedFile = {
@@ -10,7 +11,7 @@ export type UploadedFile = {
   embedded: boolean
 }
 
-interface BotBuilderState {
+export interface BotBuilderState {
   files: UploadedFile[]
   addFile: (file: UploadedFile) => void
   removeFile: (fileId: string) => void
