@@ -17,7 +17,6 @@ import ReactFlow, {
 } from 'react-flow-renderer'
 import { nanoid } from 'nanoid'
 import { useFlowStore } from '@/store/flowStore'
-import { useBotBuilderStore } from '@/store/botBuilderStore'
 import type { NodeData } from '@/types'
 import { toast } from 'sonner'
 import StartNode from './nodes/StartNode'
@@ -30,6 +29,11 @@ import DecisionNode from './nodes/DecisionNode'
 import EndNode from './nodes/EndNode'
 import WebhookNode from './nodes/WebhookNode'
 import FileSearchNode from './nodes/FileSearchNode'
+import TextNode from './nodes/TextNode'
+import TopBar, { SavingState } from './builder/TopBar'
+import NodePalette from './builder/NodePalette'
+import InspectorPanel from './builder/InspectorPanel'
+import TextNodeToolbar from './builder/TextNodeToolbar'
 
 const nodeTypes = {
   start: StartNode,
@@ -41,6 +45,7 @@ const nodeTypes = {
   webhook: WebhookNode,
   http: HttpRequestNode,
   decision: DecisionNode,
+  textNode: TextNode,
   end: EndNode,
 }
 
@@ -49,8 +54,9 @@ type Props = { botId: string; planLimit: number; botName: string }
 function BuilderContent({ botId, planLimit, botName }: Props) {
   const [rfNodes, setRfNodes] = useState<Node<NodeData>[]>([])
   const [rfEdges, setRfEdges] = useState<Edge[]>([])
+  const [savingState, setSavingState] = useState<'saved' | 'saving' | 'error'>('saved')
+  const [name, setName] = useState(botName)
   const store = useFlowStore()
-  const files = useBotBuilderStore((s) => s.files)
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
   const rf = useReactFlow()
   const [paletteOpen, setPaletteOpen] = useState(false)
@@ -93,6 +99,37 @@ function BuilderContent({ botId, planLimit, botName }: Props) {
     store.setEdges(rfEdges)
   }, [rfEdges, store])
 
+  useEffect(() => {
+    const id = setTimeout(async () => {
+      if (name !== botName) {
+        await fetch(`/api/bots/${botId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name }),
+        })
+      }
+    }, 1000)
+    return () => clearTimeout(id)
+  }, [name, botId, botName])
+
+  useEffect(() => {
+    setSavingState('saving')
+    const id = setTimeout(async () => {
+      const nodesToSave = rfNodes.slice(0, planLimit)
+      const allowedIds = new Set(nodesToSave.map((n) => n.id))
+      const edgesToSave = rfEdges.filter(
+        (e) => allowedIds.has(e.source) && allowedIds.has(e.target)
+      )
+      try {
+        await store.saveData(botId, nodesToSave, edgesToSave)
+        setSavingState('saved')
+      } catch {
+        setSavingState('error')
+      }
+    }, 1500)
+    return () => clearTimeout(id)
+  }, [rfNodes, rfEdges, botId, planLimit, store])
+
   const onNodesChange = useCallback(
     (changes: NodeChange[]) =>
       setRfNodes((nds) => applyNodeChanges(changes, nds)),
@@ -109,10 +146,6 @@ function BuilderContent({ botId, planLimit, botName }: Props) {
     []
   )
 
-  const onDragStart = (event: React.DragEvent, nodeType: string) => {
-    event.dataTransfer.setData('application/reactflow', nodeType)
-    event.dataTransfer.effectAllowed = 'move'
-  }
 
   const defaultData = (type: string): NodeData => {
     switch (type) {
@@ -120,6 +153,8 @@ function BuilderContent({ botId, planLimit, botName }: Props) {
         return { delay: 1 }
       case 'send':
         return { message: '' }
+      case 'textNode':
+        return { text: 'Text', fontFamily: 'sans', size: 'md' }
       default:
         return {}
     }
@@ -173,32 +208,26 @@ function BuilderContent({ botId, planLimit, botName }: Props) {
     event.dataTransfer.dropEffect = 'move'
   }
 
-  const save = async () => {
-    const nodesToSave = rfNodes.slice(0, planLimit)
-    const allowedIds = new Set(nodesToSave.map((n) => n.id))
-    const edgesToSave = rfEdges.filter(
-      (e) => allowedIds.has(e.source) && allowedIds.has(e.target)
-    )
-    try {
-      await store.saveData(botId, nodesToSave, edgesToSave)
-      toast.success('Flow saved')
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Save failed'
-      toast.error(msg)
-    }
-  }
 
   const selectNode = (_: React.MouseEvent, node: Node<NodeData>) => {
     store.setSelected(node)
   }
 
-  const deleteSelected = () => {
+  const deleteSelected = useCallback(() => {
     const node = store.selected
     if (!node) return
     setRfNodes((nds) => nds.filter((n) => n.id !== node.id))
     setRfEdges((eds) => eds.filter((e) => e.source !== node.id && e.target !== node.id))
     store.setSelected(null)
-  }
+  }, [store])
+
+  useEffect(() => {
+    const handle = (e: KeyboardEvent) => {
+      if (e.key === 'Delete') deleteSelected()
+    }
+    window.addEventListener('keydown', handle)
+    return () => window.removeEventListener('keydown', handle)
+  }, [deleteSelected])
 
   // Templates
   const [showTemplates, setShowTemplates] = useState(false)
@@ -281,55 +310,8 @@ function BuilderContent({ botId, planLimit, botName }: Props) {
 
   return (
     <div className="h-screen w-screen relative">
-      <header className="fixed top-0 inset-x-0 h-12 flex items-center justify-between bg-white border-b px-4 z-50">
-        <nav className="text-sm text-gray-500" aria-label="Breadcrumb">
-          Dashboard / Bots / {botName} / Builder
-        </nav>
-        <button
-          onClick={save}
-          className="btn btn-sm btn-primary"
-          aria-label="Save Flow"
-        >
-          Save Flow
-        </button>
-      </header>
-      {paletteOpen && (
-        <div
-          className="fixed top-16 left-4 z-50 w-40 bg-white rounded shadow p-2 space-y-2 md:block"
-          aria-label="Node palette"
-        >
-          {[
-          ['start', 'Start'],
-          ['send', 'Send Message'],
-          ['wait', 'Wait'],
-          ['input', 'Receive Input'],
-          ['file', 'File Lookup'],
-          ['file-search', 'File Search'],
-          ['webhook', 'Webhook'],
-          ['http', 'HTTP Request'],
-          ['decision', 'Decision'],
-          ['end', 'End'],
-          ].map(([type, label]) => (
-            <div
-              key={type}
-              role="button"
-              tabIndex={0}
-              className="p-2 bg-white rounded shadow cursor-grab"
-              onDragStart={(e) => onDragStart(e, type)}
-              onClick={() => addNode(type)}
-              draggable
-            >
-              {label}
-            </div>
-          ))}
-          <button
-            onClick={() => setShowTemplates(true)}
-            className="w-full bg-white border rounded p-1 text-sm"
-          >
-            + Templates
-          </button>
-        </div>
-      )}
+      <TopBar botName={name} onNameChange={setName} saving={savingState as SavingState} />
+      {paletteOpen && <NodePalette onAdd={addNode} />}
       <button
         onClick={() => setPaletteOpen((o) => !o)}
         className="fixed top-16 left-4 z-50 md:hidden bg-white rounded shadow px-2 py-1"
@@ -358,183 +340,17 @@ function BuilderContent({ botId, planLimit, botName }: Props) {
         </ReactFlow>
       </div>
       {store.selected && (
-        <aside className="fixed top-16 right-4 w-60 bg-white rounded shadow p-4 space-y-2 text-sm z-50">
-          <h2 className="font-semibold mb-2">Node Settings</h2>
-          <div>
-            {['send', 'start', 'end', 'webhook', 'file-search', 'http'].includes(
-              store.selected.type ?? ''
-            ) && (
-              <div className="mb-2">
-                <label className="block mb-1" htmlFor="label">Label</label>
-                <input
-                  id="label"
-                  className="w-full border p-1"
-                  value={store.selected.data.label || ''}
-                  onChange={(e) => updateNodeData('label', e.target.value)}
-                />
-              </div>
-            )}
-            {store.selected && (
-              <div className="mb-2">
-                <label className="block mb-1" htmlFor="description">Description</label>
-                <input
-                  id="description"
-                  className="w-full border p-1"
-                  value={store.selected.data.description || ''}
-                  onChange={(e) => updateNodeData('description', e.target.value)}
-                />
-              </div>
-            )}
-            {store.selected && (
-              <div className="mb-2">
-                <label className="block mb-1" htmlFor="color">Color</label>
-                <input
-                  id="color"
-                  type="color"
-                  className="w-full border p-1 h-8"
-                  value={store.selected.data.color || '#ffffff'}
-                  onChange={(e) => updateNodeData('color', e.target.value)}
-                />
-              </div>
-            )}
-            {store.selected.type === 'send' && (
-              <div className="mb-2">
-                <label className="block mb-1" htmlFor="message">Message</label>
-                <textarea
-                  id="message"
-                  className="w-full border p-1"
-                  value={store.selected.data.message || ''}
-                  onChange={(e) => updateNodeData('message', e.target.value)}
-                />
-              </div>
-            )}
-            {store.selected.type === 'wait' && (
-              <div className="mb-2">
-                <label className="block mb-1" htmlFor="delay">Delay (s)</label>
-                <input
-                  id="delay"
-                  type="number"
-                  className="w-full border p-1"
-                  value={store.selected.data.delay ?? 1}
-                  onChange={(e) => updateNodeData('delay', Number(e.target.value))}
-                />
-              </div>
-            )}
-            {store.selected.type === 'http' && (
-              <div className="mb-2">
-                <label className="block mb-1" htmlFor="url">URL</label>
-                <input
-                  id="url"
-                  className="w-full border p-1"
-                  value={store.selected.data.url || ''}
-                  onChange={(e) => updateNodeData('url', e.target.value)}
-                />
-              </div>
-            )}
-            {store.selected.type === 'webhook' && (
-              <div className="space-y-2">
-                <div className="mb-2">
-                  <label className="block mb-1" htmlFor="wh-url">Webhook URL</label>
-                  <input
-                    id="wh-url"
-                    className="w-full border p-1"
-                    value={store.selected.data.url || ''}
-                    onChange={(e) => updateNodeData('url', e.target.value)}
-                  />
-                </div>
-                <div className="mb-2">
-                  <label className="block mb-1" htmlFor="wh-method">Method</label>
-                  <select
-                    id="wh-method"
-                    className="w-full border p-1"
-                    value={store.selected.data.method || 'POST'}
-                    onChange={(e) => updateNodeData('method', e.target.value)}
-                  >
-                    <option value="GET">GET</option>
-                    <option value="POST">POST</option>
-                  </select>
-                </div>
-                <div className="mb-2">
-                  <label className="block mb-1" htmlFor="wh-headers">Headers</label>
-                  <textarea
-                    id="wh-headers"
-                    className="w-full border p-1"
-                    value={(store.selected.data.headers || [])
-                      .map((h) => `${h.key}:${h.value}`)
-                      .join('\n')}
-                    onChange={(e) =>
-                      updateNodeData(
-                        'headers',
-                        e.target.value
-                          .split('\n')
-                          .map((l) => {
-                            const [key, ...rest] = l.split(':')
-                            return { key: key.trim(), value: rest.join(':').trim() }
-                          })
-                          .filter((h) => h.key)
-                      )
-                    }
-                  />
-                </div>
-                <div className="mb-2">
-                  <label className="block mb-1" htmlFor="wh-payload">Payload</label>
-                  <textarea
-                    id="wh-payload"
-                    className="w-full border p-1"
-                    value={store.selected.data.payload || ''}
-                    onChange={(e) => updateNodeData('payload', e.target.value)}
-                  />
-                </div>
-              </div>
-            )}
-            {store.selected.type === 'file-search' && (
-              <div className="space-y-2">
-                <div className="mb-2">
-                  <label className="block mb-1" htmlFor="fs-file">File</label>
-                  <select
-                    id="fs-file"
-                    className="w-full border p-1"
-                    value={store.selected.data.fileId || ''}
-                    onChange={(e) => updateNodeData('fileId', e.target.value)}
-                  >
-                    <option value="">Select file</option>
-                    {files.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="mb-2">
-                  <label className="block mb-1" htmlFor="fs-prompt">User prompt</label>
-                  <textarea
-                    id="fs-prompt"
-                    className="w-full border p-1"
-                    value={store.selected.data.prompt || ''}
-                    onChange={(e) => updateNodeData('prompt', e.target.value)}
-                  />
-                </div>
-              </div>
-            )}
-            {store.selected.type === 'decision' && (
-              <div className="mb-2">
-                <label className="block mb-1" htmlFor="condition">Condition</label>
-                <input
-                  id="condition"
-                  className="w-full border p-1"
-                  value={store.selected.data.condition || ''}
-                  onChange={(e) => updateNodeData('condition', e.target.value)}
-                />
-              </div>
-            )}
-            <button
-              onClick={deleteSelected}
-              className="mt-2 bg-red-500 text-white px-2 py-1 rounded"
-            >
-              Delete
-            </button>
-          </div>
-        </aside>
+        <InspectorPanel node={store.selected} update={updateNodeData} remove={deleteSelected} />
+      )}
+      {store.selected?.type === 'textNode' && (
+        <TextNodeToolbar
+          node={store.selected}
+          update={(d) =>
+            Object.entries(d).forEach(([k, v]) =>
+              updateNodeData(k as keyof NodeData, v as never)
+            )
+          }
+        />
       )}
       {showTemplates && (
         <div
