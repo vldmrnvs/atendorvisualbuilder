@@ -1,5 +1,5 @@
 // @ts-nocheck
-import create from 'zustand'
+import { create } from 'zustand'
 import type { FileType } from '@/types'
 
 export type UploadedFile = {
