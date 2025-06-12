@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-page-custom-font */
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "sonner";
@@ -5,6 +6,7 @@ import { Toaster } from "sonner";
 export const metadata: Metadata = {
   title: "Atendor",
   description: "Atendor AI chatbot builder",
+  metadataBase: new URL("https://atendor.example.com"),
   openGraph: {
     title: "Atendor",
     description: "Atendor AI chatbot builder",

@@ -12,6 +12,7 @@ import ReactFlow, {
   type Node,
   EdgeChange,
   NodeChange,
+  ReactFlowProvider,
 } from 'react-flow-renderer'
 import { nanoid } from 'nanoid'
 import { useFlowStore } from '@/store/flowStore'
@@ -44,7 +45,7 @@ const nodeTypes = {
 
 type Props = { botId: string; planLimit: number }
 
-export default function BotFlowBuilder({ botId, planLimit }: Props) {
+function BuilderContent({ botId, planLimit }: Props) {
   const [rfNodes, setRfNodes] = useState<Node<NodeData>[]>([])
   const [rfEdges, setRfEdges] = useState<Edge[]>([])
   const store = useFlowStore()
@@ -228,7 +229,10 @@ export default function BotFlowBuilder({ botId, planLimit }: Props) {
     setShowTemplates(false)
   }
 
-  const updateNodeData = (field: keyof NodeData, value: string | number) => {
+  const updateNodeData = (
+    field: keyof NodeData,
+    value: NodeData[keyof NodeData]
+  ) => {
     const node = store.selected
     if (!node) return
     setRfNodes((nds) =>
@@ -509,5 +513,13 @@ export default function BotFlowBuilder({ botId, planLimit }: Props) {
         </div>
       )}
     </div>
+  )
+}
+
+export default function BotFlowBuilder(props: Props) {
+  return (
+    <ReactFlowProvider>
+      <BuilderContent {...props} />
+    </ReactFlowProvider>
   )
 }
