@@ -62,7 +62,7 @@ export class FilesCrud {
       throw new Error(`Unsupported extension ${extension}`)
     }
     const supabase = getSupabaseClient()
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('bot-files')
       .upload(`${botId}/${file.name}`, file, { upsert: true })
     if (error) throw new Error(error.message)

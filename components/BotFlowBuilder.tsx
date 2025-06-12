@@ -228,7 +228,8 @@ export default function BotFlowBuilder({ botId, planLimit }: Props) {
     setShowTemplates(false)
   }
 
-  const updateNodeData = (field: keyof NodeData, value: string | number) => {
+  type NodeValue = string | number | { key: string; value: string }[]
+  const updateNodeData = (field: keyof NodeData, value: NodeValue) => {
     const node = store.selected
     if (!node) return
     setRfNodes((nds) =>

@@ -11,7 +11,6 @@ import ReactFlow, {
   useEdgesState,
   Connection,
   Node,
-  Edge,
 } from 'react-flow-renderer'
 import PromptNode from './nodes/PromptNode'
 import ToolNode from './nodes/ToolNode'
@@ -38,14 +37,17 @@ export default function VisualBuilder({ flowName }: { flowName: string }) {
     _setEdges(initialEdges)
   }, [initialNodes, initialEdges, _setNodes, _setEdges])
 
-  const isValid = (connection: Connection) => {
-    const source = nodes.find((n) => n.id === connection.source)
-    const target = nodes.find((n) => n.id === connection.target)
-    if (!source || !target) return false
-    if (source.type === 'prompt' && target.type === 'tool') return true
-    if (source.type === 'tool' && target.type === 'output') return true
-    return false
-  }
+  const isValid = useCallback(
+    (connection: Connection) => {
+      const source = nodes.find((n) => n.id === connection.source)
+      const target = nodes.find((n) => n.id === connection.target)
+      if (!source || !target) return false
+      if (source.type === 'prompt' && target.type === 'tool') return true
+      if (source.type === 'tool' && target.type === 'output') return true
+      return false
+    },
+    [nodes]
+  )
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -55,7 +57,7 @@ export default function VisualBuilder({ flowName }: { flowName: string }) {
         )
       }
     },
-    [nodes, _setEdges]
+    [_setEdges, isValid]
   )
 
   const onDragStart = (event: React.DragEvent, nodeType: string) => {
