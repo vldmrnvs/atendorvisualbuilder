@@ -10,6 +10,12 @@ export default function BotBuilderPage({ params }: { params: { id: string } }) {
   return (
     <div className="p-4 space-y-6">
       <h1 className="text-2xl font-bold">Bot Builder</h1>
+      <section className="space-y-2">
+        <h2 className="text-xl font-semibold">Settings</h2>
+        <span className="text-sm text-muted-foreground">
+          Your bot is powered by: <strong>Advanced AI</strong> (based on your plan)
+        </span>
+      </section>
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">Files</h2>
         <UploadArea botId={id} />
