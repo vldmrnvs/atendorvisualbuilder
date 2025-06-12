@@ -1,7 +1,7 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { Configuration, OpenAIApi } from 'openai'
+import OpenAI from 'openai'
 
 export async function POST(request: Request) {
   const { botId, fileId } = await request.json()
@@ -42,10 +42,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: downloadError?.message }, { status: 500 })
   }
   const text = await download.text()
-  const openai = new OpenAIApi(new Configuration({ apiKey: process.env.OPENAI_KEY }))
-  const embedding = await openai
-    .createEmbedding({ model: 'text-embedding-ada-002', input: text })
-    .then((res) => res.data.data[0].embedding)
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('Missing OpenAI API key')
+  }
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  const embedding = await openai.embeddings
+    .create({ model: 'text-embedding-ada-002', input: text })
+    .then((res) => res.data[0].embedding)
   await supabase.from('file_vectors').insert({ file_id: fileId, embedding })
   await supabase.from('files').update({ embedded: true }).eq('id', fileId)
   return NextResponse.json({ success: true })
