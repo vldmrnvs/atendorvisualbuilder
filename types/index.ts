@@ -22,3 +22,15 @@ export type Bot = {
   user_id?: string
   created_at?: string
 }
+
+export type FileType = 'pdf' | 'text' | 'image'
+
+export type BotFile = {
+  id?: string
+  bot_id: string
+  file_name: string
+  file_type: FileType
+  url: string
+  size_mb: number
+  embedded: boolean
+}
