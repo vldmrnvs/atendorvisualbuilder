@@ -1,5 +1,5 @@
 'use client'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import ReactFlow, {
   addEdge,
   Background,
@@ -13,6 +13,7 @@ import ReactFlow, {
   EdgeChange,
   NodeChange,
   ReactFlowProvider,
+  useReactFlow,
 } from 'react-flow-renderer'
 import { nanoid } from 'nanoid'
 import { useFlowStore } from '@/store/flowStore'
@@ -43,13 +44,20 @@ const nodeTypes = {
   end: EndNode,
 }
 
-type Props = { botId: string; planLimit: number }
+type Props = { botId: string; planLimit: number; botName: string }
 
-function BuilderContent({ botId, planLimit }: Props) {
+function BuilderContent({ botId, planLimit, botName }: Props) {
   const [rfNodes, setRfNodes] = useState<Node<NodeData>[]>([])
   const [rfEdges, setRfEdges] = useState<Edge[]>([])
   const store = useFlowStore()
   const files = useBotBuilderStore((s) => s.files)
+  const reactFlowWrapper = useRef<HTMLDivElement>(null)
+  const rf = useReactFlow()
+  const [paletteOpen, setPaletteOpen] = useState(false)
+
+  useEffect(() => {
+    setPaletteOpen(window.innerWidth >= 768)
+  }, [])
 
   useEffect(() => {
     store.load(botId)
@@ -106,21 +114,33 @@ function BuilderContent({ botId, planLimit }: Props) {
     event.dataTransfer.effectAllowed = 'move'
   }
 
-  const onDrop = useCallback(
-    (event: React.DragEvent) => {
-      event.preventDefault()
-      const type = event.dataTransfer.getData('application/reactflow')
-      if (!type) return
+  const defaultData = (type: string): NodeData => {
+    switch (type) {
+      case 'wait':
+        return { delay: 1 }
+      case 'send':
+        return { message: '' }
+      default:
+        return {}
+    }
+  }
+
+  const addNode = useCallback(
+    (type: string, position?: { x: number; y: number }) => {
       if (type === 'start' && rfNodes.some((n) => n.type === 'start')) {
         toast.error('Only one start node allowed')
         return
       }
-      const position = (event.target as HTMLElement).getBoundingClientRect()
       const newNode: Node<NodeData> = {
         id: nanoid(),
         type,
-        position: { x: event.clientX - position.left, y: event.clientY - position.top },
-        data: {},
+        position:
+          position ||
+          rf.project({
+            x: window.innerWidth / 2,
+            y: (window.innerHeight - 48) / 2,
+          }),
+        data: defaultData(type),
       }
       if (rfNodes.length >= planLimit) {
         toast.warning('Plan limit reached. Extra nodes will not be saved')
@@ -128,7 +148,24 @@ function BuilderContent({ botId, planLimit }: Props) {
       }
       setRfNodes((nds) => [...nds, newNode])
     },
-    [rfNodes, planLimit]
+    [rfNodes, planLimit, rf]
+  )
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault()
+      const type = event.dataTransfer.getData('application/reactflow')
+      if (!type) return
+      const bounds = reactFlowWrapper.current?.getBoundingClientRect()
+      const position = bounds
+        ? rf.project({
+            x: event.clientX - bounds.left,
+            y: event.clientY - bounds.top,
+          })
+        : undefined
+      addNode(type, position)
+    },
+    [addNode, rf]
   )
 
   const onDragOver = (event: React.DragEvent) => {
@@ -243,9 +280,25 @@ function BuilderContent({ botId, planLimit }: Props) {
   }
 
   return (
-    <div className="flex h-[600px] border rounded overflow-hidden">
-      <div className="w-40 bg-slate-100 p-2 space-y-2" aria-label="Node palette">
-        {[
+    <div className="h-screen w-screen relative">
+      <header className="fixed top-0 inset-x-0 h-12 flex items-center justify-between bg-white border-b px-4 z-50">
+        <nav className="text-sm text-gray-500" aria-label="Breadcrumb">
+          Dashboard / Bots / {botName} / Builder
+        </nav>
+        <button
+          onClick={save}
+          className="btn btn-sm btn-primary"
+          aria-label="Save Flow"
+        >
+          Save Flow
+        </button>
+      </header>
+      {paletteOpen && (
+        <div
+          className="fixed top-16 left-4 z-50 w-40 bg-white rounded shadow p-2 space-y-2 md:block"
+          aria-label="Node palette"
+        >
+          {[
           ['start', 'Start'],
           ['send', 'Send Message'],
           ['wait', 'Wait'],
@@ -256,20 +309,39 @@ function BuilderContent({ botId, planLimit }: Props) {
           ['http', 'HTTP Request'],
           ['decision', 'Decision'],
           ['end', 'End'],
-        ].map(([type, label]) => (
-          <div
-            key={type}
-            role="button"
-            tabIndex={0}
-            className="p-2 bg-white rounded shadow cursor-grab"
-            onDragStart={(e) => onDragStart(e, type)}
-            draggable
+          ].map(([type, label]) => (
+            <div
+              key={type}
+              role="button"
+              tabIndex={0}
+              className="p-2 bg-white rounded shadow cursor-grab"
+              onDragStart={(e) => onDragStart(e, type)}
+              onClick={() => addNode(type)}
+              draggable
+            >
+              {label}
+            </div>
+          ))}
+          <button
+            onClick={() => setShowTemplates(true)}
+            className="w-full bg-white border rounded p-1 text-sm"
           >
-            {label}
-          </div>
-        ))}
-      </div>
-      <div className="flex-1 relative" onDrop={onDrop} onDragOver={onDragOver}>
+            + Templates
+          </button>
+        </div>
+      )}
+      <button
+        onClick={() => setPaletteOpen((o) => !o)}
+        className="fixed top-16 left-4 z-50 md:hidden bg-white rounded shadow px-2 py-1"
+      >
+        {paletteOpen ? 'Close' : 'Nodes'}
+      </button>
+      <div
+        className="fixed inset-0 top-12"
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        ref={reactFlowWrapper}
+      >
         <ReactFlow
           nodes={rfNodes}
           edges={rfEdges}
@@ -284,29 +356,11 @@ function BuilderContent({ botId, planLimit }: Props) {
           <Controls />
           <Background />
         </ReactFlow>
-        <button
-          onClick={() => setShowTemplates(true)}
-          className="absolute top-2 left-1/2 -translate-x-1/2 bg-white border px-3 py-1 rounded text-sm"
-        >
-          + Templates
-        </button>
-        <div className="absolute top-2 right-2 space-x-2">
-          <button
-            onClick={save}
-            className="bg-black text-white px-3 py-1 rounded text-sm"
-            aria-label="Save Flow"
-          >
-            Save Flow
-          </button>
-        </div>
       </div>
-      <aside className="w-60 border-l p-4 space-y-2 text-sm">
-        <div className="text-xs text-gray-500" aria-live="polite">
-          Upgrade your plan to unlock more AI power
-        </div>
-        {store.selected && (
+      {store.selected && (
+        <aside className="fixed top-16 right-4 w-60 bg-white rounded shadow p-4 space-y-2 text-sm z-50">
+          <h2 className="font-semibold mb-2">Node Settings</h2>
           <div>
-            <h2 className="font-semibold mb-2">Node Settings</h2>
             {['send', 'start', 'end', 'webhook', 'file-search', 'http'].includes(
               store.selected.type ?? ''
             ) && (

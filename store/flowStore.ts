@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { nanoid } from 'nanoid'
 import type { Node, Edge } from 'react-flow-renderer'
 import type { NodeData } from '@/types'
 import { getSupabaseClient } from '@/lib/supabaseClient'
@@ -34,7 +33,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     const { data } = await supabase
       .from('flows')
       .select('*')
-      .eq('flowName', `bot-${botId}`)
+      .eq('bot_id', botId)
       .single()
     if (data) {
       set({ flowId: data.id, nodes: data.nodes || [], edges: data.edges || [] })
@@ -45,6 +44,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   async save(botId) {
     const supabase = getSupabaseClient()
     const payload = {
+      bot_id: botId,
       flowName: `bot-${botId}`,
       nodes: get().nodes,
       edges: get().edges,
@@ -63,6 +63,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   async saveData(botId, nodes, edges) {
     const supabase = getSupabaseClient()
     const payload = {
+      bot_id: botId,
       flowName: `bot-${botId}`,
       nodes,
       edges,

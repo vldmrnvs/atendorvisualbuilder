@@ -1,9 +1,6 @@
 'use client'
-import { UploadArea } from '@/components/builder/UploadArea'
-import { FileList } from '@/components/builder/FileList'
 import { useUser } from '@/hooks/useUser'
 import BotFlowBuilder from '@/components/BotFlowBuilder'
-import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from 'sonner'
@@ -39,43 +36,5 @@ export default function BotBuilderPage({ params }: { params: any }) {
     fetchBot()
   }, [user, id, supabase, loadFiles])
   if (isLoading || !botName) return <p className="p-4">Loading...</p>
-  return (
-    <div className="p-4 space-y-6">
-      <nav className="text-sm" aria-label="Breadcrumb">
-        <ol className="list-reset flex space-x-1">
-          <li>
-            <Link href="/dashboard" className="text-blue-600 underline">Dashboard</Link> /
-          </li>
-          <li>
-            <Link href="/dashboard/bots" className="text-blue-600 underline">Bots</Link> /
-          </li>
-          <li>
-            <Link href={`/dashboard/bots/${id}`} className="text-blue-600 underline">{botName}</Link> /
-          </li>
-          <li aria-current="page">Builder</li>
-        </ol>
-      </nav>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{botName} Builder</h1>
-        <button
-          onClick={() => alert('Preview coming soon')}
-          className="border px-3 py-1 rounded"
-        >
-          Preview Chat
-        </button>
-      </div>
-      <BotFlowBuilder botId={id} planLimit={PLAN_LIMITS[plan]} />
-      <section className="space-y-2">
-        <h2 className="text-xl font-semibold">Settings</h2>
-        <span className="text-sm text-muted-foreground">
-          Your bot is powered by: <strong>Advanced AI</strong> (based on your plan)
-        </span>
-      </section>
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Files</h2>
-        <UploadArea botId={id} />
-        <FileList />
-      </section>
-    </div>
-  )
+  return <BotFlowBuilder botId={id} planLimit={PLAN_LIMITS[plan]} botName={botName} />
 }
