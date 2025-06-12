@@ -4,21 +4,6 @@ import { getSupabaseClient } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-export const metadata = {
-  title: 'Reset Password – Atendor',
-  description: 'Choose a new password for your account.',
-  openGraph: {
-    title: 'Reset Password – Atendor',
-    description: 'Choose a new password for your account.',
-    images: ['/og.png'],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Reset Password – Atendor',
-    description: 'Choose a new password for your account.',
-    images: ['/og.png'],
-  },
-}
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
