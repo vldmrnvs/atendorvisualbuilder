@@ -1,24 +1,31 @@
 'use client'
-import { supabase } from '@/lib/supabaseClient'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { toast } from 'sonner'
+import { useUser } from '@/hooks/useUser'
 
 export default function SignupPage() {
+  const supabase = createClientComponentClient()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const { isLoggedIn } = useUser()
+
+  useEffect(() => {
+    if (isLoggedIn) router.replace('/dashboard')
+  }, [isLoggedIn, router])
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
     setLoading(true)
     const { error } = await supabase.auth.signUp({ email, password })
     setLoading(false)
     if (error) {
-      setError(error.message)
+      toast.error(error.message)
     } else {
+      toast.success('Account created')
       router.push('/dashboard')
     }
   }
@@ -43,7 +50,6 @@ export default function SignupPage() {
       <button className="w-full bg-black text-white p-2" type="submit">
         {loading ? 'Loading...' : 'Sign Up'}
       </button>
-      {error && <p className="text-red-500 text-sm">{error}</p>}
     </form>
   )
 }

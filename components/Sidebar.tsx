@@ -12,13 +12,16 @@ export default function Sidebar() {
       </div>
       <nav className="space-y-2">
         <Link href="/dashboard" className="block p-2 rounded hover:bg-gray-200">
-          Start
+          Dashboard
         </Link>
-        <Link href="/dashboard/bots" className="block p-2 rounded hover:bg-gray-200">
-          My Bots
+        <Link href="/dashboard/builder" className="block p-2 rounded hover:bg-gray-200">
+          Builder
         </Link>
-        <Link href="/dashboard/feedback" className="block p-2 rounded hover:bg-gray-200">
-          Feedback
+        <Link href="/profile" className="block p-2 rounded hover:bg-gray-200">
+          Profile
+        </Link>
+        <Link href="/logout" className="block p-2 rounded hover:bg-gray-200">
+          Logout
         </Link>
       </nav>
     </aside>
