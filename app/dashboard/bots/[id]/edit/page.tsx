@@ -3,6 +3,8 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import BotFlowEditor from '@/components/BotFlowEditor'
 
+export const dynamic = 'force-dynamic'
+
 export default async function EditBotPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = createServerComponentClient(

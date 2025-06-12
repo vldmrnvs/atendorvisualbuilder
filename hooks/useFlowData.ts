@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseClient } from '@/lib/supabase'
 import type { FlowType } from '@/types'
 import type { Node, Edge } from 'react-flow-renderer'
 
@@ -10,6 +10,7 @@ export function useFlowData(flowName: string) {
   const [flowId, setFlowId] = useState<string | null>(null)
 
   useEffect(() => {
+    const supabase = getSupabaseClient()
     const fetchFlow = async () => {
       const { data } = await supabase
         .from('flows')
@@ -31,6 +32,7 @@ export function useFlowData(flowName: string) {
       nodes: newNodes,
       edges: newEdges,
     }
+    const supabase = getSupabaseClient()
     if (flowId) {
       await supabase.from('flows').update(payload).eq('id', flowId)
     } else {
