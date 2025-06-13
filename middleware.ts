@@ -14,7 +14,8 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
   const isAuthPage = pathname === '/login' || pathname === '/signup'
-  const isProtected = pathname.startsWith('/dashboard') || pathname === '/profile'
+  const isProtected =
+    pathname.startsWith('/dashboard') || pathname === '/dashboard/profile'
 
   if (!session && isProtected) {
     const redirectUrl = req.nextUrl.clone()
@@ -32,5 +33,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/profile', '/login', '/signup'],
+  matcher: ['/dashboard/:path*', '/login', '/signup'],
 }
