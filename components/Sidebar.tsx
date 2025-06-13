@@ -14,8 +14,8 @@ export default function Sidebar() {
         <Link href="/dashboard" className="block p-2 rounded hover:bg-gray-200">
           Dashboard
         </Link>
-        <Link href="/dashboard/builder" className="block p-2 rounded hover:bg-gray-200">
-          Builder
+        <Link href="/dashboard/bots" className="block p-2 rounded hover:bg-gray-200">
+          Bots
         </Link>
         <Link href="/dashboard/profile" className="block p-2 rounded hover:bg-gray-200">
           Profile
