@@ -6,6 +6,10 @@ import type { Node, Edge } from 'react-flow-renderer'
 import type { NodeData } from '@/types'
 import { getSupabaseClient } from '@/lib/supabaseClient'
 
+/**
+ * Global builder store. Holds nodes, edges and helper methods.
+ * Use `useFlowStore` within `FlowStoreProvider` to read/update state.
+ */
 export interface FlowState {
   nodes: Node<NodeData>[]
   edges: Edge[]

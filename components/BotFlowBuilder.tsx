@@ -34,6 +34,7 @@ import TopBar, { SavingState } from './builder/TopBar'
 import NodePalette from './builder/NodePalette'
 import InspectorPanel from './builder/InspectorPanel'
 import TextNodeToolbar from './builder/TextNodeToolbar'
+import { createTemplate, TemplateName } from '@/utils/templates'
 
 const nodeTypes = {
   start: StartNode,
@@ -231,62 +232,8 @@ function BuilderContent({ botId, planLimit, botName }: Props) {
 
   // Templates
   const [showTemplates, setShowTemplates] = useState(false)
-  const applyTemplate = (name: string) => {
-    const base = [
-      { id: nanoid(), type: 'start', position: { x: 0, y: 0 }, data: {} },
-      { id: nanoid(), type: 'end', position: { x: 600, y: 0 }, data: {} },
-    ]
-    let nodes: Node<NodeData>[] = []
-    let edges: Edge[] = []
-    if (name === 'faq') {
-      nodes = [
-        base[0],
-        { id: nanoid(), type: 'input', position: { x: 150, y: 0 }, data: {} },
-        { id: nanoid(), type: 'file', position: { x: 300, y: 0 }, data: {} },
-        { id: nanoid(), type: 'send', position: { x: 450, y: 0 }, data: {} },
-        base[1],
-      ]
-    } else if (name === 'lead') {
-      nodes = [
-        base[0],
-        { id: nanoid(), type: 'send', position: { x: 150, y: 0 }, data: { message: "What's your name?" } },
-        { id: nanoid(), type: 'input', position: { x: 300, y: 0 }, data: {} },
-        { id: nanoid(), type: 'send', position: { x: 450, y: 0 }, data: { message: "What's your email?" } },
-        { id: nanoid(), type: 'input', position: { x: 600, y: 0 }, data: {} },
-        base[1],
-      ]
-    } else if (name === 'wa') {
-      nodes = [
-        base[0],
-        { id: nanoid(), type: 'send', position: { x: 150, y: 0 }, data: { message: 'Hello! Welcome 👋' } },
-        { id: nanoid(), type: 'wait', position: { x: 300, y: 0 }, data: { delay: 2 } },
-        { id: nanoid(), type: 'send', position: { x: 450, y: 0 }, data: { message: 'How can I help you today?' } },
-        base[1],
-      ]
-    } else if (name === 'booking') {
-      nodes = [
-        base[0],
-        { id: nanoid(), type: 'send', position: { x: 150, y: 0 }, data: { message: 'What day would you like to book?' } },
-        { id: nanoid(), type: 'input', position: { x: 350, y: 0 }, data: {} },
-        { id: nanoid(), type: 'send', position: { x: 550, y: 0 }, data: { message: 'Booking confirmed!' } },
-        base[1],
-      ]
-    } else if (name === 'survey') {
-      nodes = [
-        base[0],
-        { id: nanoid(), type: 'send', position: { x: 150, y: 0 }, data: { message: 'Rate us 1-5' } },
-        { id: nanoid(), type: 'input', position: { x: 300, y: 0 }, data: {} },
-        { id: nanoid(), type: 'send', position: { x: 450, y: 0 }, data: { message: 'Thanks!' } },
-        base[1],
-      ]
-    }
-    // edges sequential
-    edges = nodes.slice(0, -1).map((n, i) => ({
-      id: nanoid(),
-      source: n.id,
-      target: nodes[i + 1].id,
-      type: 'smoothstep',
-    }))
+  const applyTemplate = (name: TemplateName) => {
+    const { nodes, edges } = createTemplate(name)
     if (nodes.length > planLimit) {
       toast.warning('Template exceeds plan limit. Extra nodes marked in red')
     }
