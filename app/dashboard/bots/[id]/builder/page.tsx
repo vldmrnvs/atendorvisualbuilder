@@ -1,6 +1,8 @@
 'use client'
-import { useUser } from '@/hooks/useUser'
+
+import { FlowStoreProvider } from '@/store/flowStore'
 import BotFlowBuilder from '@/components/BotFlowBuilder'
+import { useUser } from '@/hooks/useUser'
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from 'sonner'
@@ -35,6 +37,12 @@ export default function BotBuilderPage({ params }: { params: any }) {
     }
     fetchBot()
   }, [user, id, supabase, loadFiles])
+
   if (isLoading || !botName) return <p className="p-4">Loading...</p>
-  return <BotFlowBuilder botId={id} planLimit={PLAN_LIMITS[plan]} botName={botName} />
+
+  return (
+    <FlowStoreProvider>
+      <BotFlowBuilder botId={id} planLimit={PLAN_LIMITS[plan]} botName={botName} />
+    </FlowStoreProvider>
+  )
 }

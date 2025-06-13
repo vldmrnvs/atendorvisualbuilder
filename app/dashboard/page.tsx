@@ -13,12 +13,13 @@ export default async function DashboardPage() {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLIC!,
     }
   )
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+
+  const { data: { session } } = await supabase.auth.getSession()
+
   if (!session) {
     return <p className="p-4">Unauthorized</p>
   }
+
   const { data: bots } = await supabase
     .from('bots')
     .select('id, name, created_at')
